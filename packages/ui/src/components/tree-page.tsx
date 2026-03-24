@@ -5,10 +5,12 @@ import { treePathsOptions, treeInfoOptions, treeFileContentOptions, treeEntriesO
 import { useTheme } from '../hooks/use-theme';
 import { useReviewThreads } from '../hooks/use-review-threads';
 import { useCommentActions } from '../hooks/use-comment-actions';
-import { isThreadResolved } from '../types/comment';
+import { isThreadResolved, GENERAL_THREAD_FILE_PATH } from '../types/comment';
+import type { CommentThread } from '../types/comment';
 import { TreeSidebar } from './tree-sidebar';
 import { FolderViewer } from './folder-viewer';
 import { FileViewer } from './file-viewer';
+import { CommentToolbarActions } from './comment-toolbar-actions';
 import { PageLoader } from './skeleton';
 import { GitBranchIcon } from './icons/git-branch-icon';
 import { SunIcon } from './icons/sun-icon';
@@ -41,6 +43,43 @@ function updateUrl(path: string, type: 'file' | 'dir') {
   window.history.pushState({}, '', url);
 }
 
+function formatTreeThreadsForCopy(threads: CommentThread[]): string {
+  const unresolvedThreads = threads.filter(t => !isThreadResolved(t) && t.filePath !== GENERAL_THREAD_FILE_PATH);
+  if (unresolvedThreads.length === 0) {
+    return '';
+  }
+
+  const parts: string[] = [];
+
+  for (const thread of unresolvedThreads) {
+    const lineRange = thread.startLine === thread.endLine
+      ? `${thread.startLine}`
+      : `${thread.startLine}-${thread.endLine}`;
+    parts.push(`## ${thread.filePath}:${lineRange}`);
+
+    if (thread.anchorContent) {
+      parts.push('```');
+      parts.push(thread.anchorContent);
+      parts.push('```');
+    }
+
+    const uniqueAuthors = new Set(thread.comments.map(c => c.author.name));
+    const singleAuthor = uniqueAuthors.size === 1;
+
+    for (const comment of thread.comments) {
+      if (singleAuthor) {
+        parts.push(comment.body);
+      } else {
+        const authorName = comment.author.name === 'You' ? 'User' : comment.author.name;
+        parts.push(`**${authorName}:** ${comment.body}`);
+      }
+    }
+    parts.push('');
+  }
+
+  return parts.join('\n');
+}
+
 export function TreePage(props: TreePageProps) {
   const { initialTheme } = props;
   const { theme, toggleTheme } = useTheme(initialTheme);
@@ -48,6 +87,7 @@ export function TreePage(props: TreePageProps) {
 
   const [nav, setNav] = useState(getPathFromUrl);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
   const nprogressActive = useRef(false);
 
   useEffect(() => {
@@ -141,6 +181,34 @@ export function TreePage(props: TreePageProps) {
     }
   }, [handleFileClick, handleDirClick]);
 
+  const handleScrollToThread = useCallback((threadId: string, filePath: string) => {
+    if (filePath !== nav.path || nav.type !== 'file') {
+      queryClient.prefetchQuery(treeFileContentOptions(filePath));
+      updateUrl(filePath, 'file');
+      setNav({ path: filePath, type: 'file' });
+      // Scroll after file loads — use a short delay to let React render
+      setTimeout(() => {
+        const el = document.querySelector(`[data-thread-id="${threadId}"]`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('flash-thread');
+          setTimeout(() => el.classList.remove('flash-thread'), 1500);
+        }
+      }, 300);
+      return;
+    }
+    const el = document.querySelector(`[data-thread-id="${threadId}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('flash-thread');
+      setTimeout(() => el.classList.remove('flash-thread'), 1500);
+    }
+  }, [nav, queryClient]);
+
+  const formatForCopy = useCallback(() => {
+    return formatTreeThreadsForCopy(threads);
+  }, [threads]);
+
   const breadcrumbs = useMemo(() => {
     if (!nav.path) {
       return [];
@@ -186,6 +254,12 @@ export function TreePage(props: TreePageProps) {
           <span className="text-text-muted truncate hidden lg:inline">Repository browser</span>
         </div>
         <div className="flex items-center gap-2 ml-auto shrink-0">
+          <CommentToolbarActions
+            threads={threads}
+            onScrollToThread={handleScrollToThread}
+            onDeleteAllComments={commentActions.deleteAllThreads}
+            formatForCopy={formatForCopy}
+          />
           <button
             className="p-1.5 rounded-md text-text-muted hover:text-text hover:bg-hover bg-bg-tertiary transition-colors cursor-pointer"
             onClick={toggleTheme}
@@ -206,7 +280,7 @@ export function TreePage(props: TreePageProps) {
           onDirClick={handleDirClick}
         />
 
-        <main className="flex-1 overflow-y-auto p-6">
+        <main ref={mainRef} className="flex-1 overflow-y-auto p-6">
           <nav className="flex items-center gap-1 mb-4 text-sm">
             <button
               className={breadcrumbs.length > 0 ? 'text-accent hover:underline cursor-pointer' : 'text-text font-medium'}
