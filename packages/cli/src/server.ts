@@ -29,6 +29,8 @@ import {
   getRefCapabilities,
   getHeadHash,
   isDirty,
+  getTree,
+  getTreeEntries,
   WORKING_TREE_REFS,
 } from '@diffity/git';
 import {
@@ -440,6 +442,40 @@ export function startServer(options: ServerOptions): Promise<ServerResult> {
             pulled++;
           }
           sendJson(res, { pulled, skipped });
+          return;
+        }
+
+        if (pathname === '/api/tree') {
+          try {
+            const paths = getTree();
+            sendJson(res, { paths });
+          } catch (err) {
+            sendError(res, 500, `Failed to get tree: ${err}`);
+          }
+          return;
+        }
+
+        if (pathname === '/api/tree/entries') {
+          try {
+            const dirPath = url.searchParams.get('path') || undefined;
+            const entries = getTreeEntries('HEAD', dirPath);
+            sendJson(res, { entries });
+          } catch (err) {
+            sendError(res, 500, `Failed to get tree entries: ${err}`);
+          }
+          return;
+        }
+
+        if (pathname === '/api/tree/info') {
+          const info = getRepoInfo();
+          const session = findOrCreateSession('__tree__');
+          sendJson(res, {
+            ...info,
+            description: 'Repository file browser',
+            capabilities: { reviews: true, revert: false, staleness: false },
+            sessionId: session.id,
+            github: githubRemote,
+          });
           return;
         }
 

@@ -16,6 +16,7 @@
     "@tanstack/react-virtual": "^3.13.22",
     "clsx": "^2.1.1",
     "dayjs": "^1.11.20",
+    "nprogress": "^0.2.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-hotkeys-hook": "^5.2.4",
@@ -27,6 +28,7 @@
     "tailwindcss": "^4.2.1"
   },
   "devDependencies": {
+    "@types/nprogress": "^0.2.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",

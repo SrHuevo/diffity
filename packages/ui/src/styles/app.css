@@ -165,6 +165,13 @@ dialog {
   animation: flash-thread 1.5s ease-out;
 }
 
+#nprogress .bar {
+  background: var(--color-accent) !important;
+}
+#nprogress .peg {
+  box-shadow: 0 0 10px var(--color-accent), 0 0 5px var(--color-accent) !important;
+}
+
 .diff-empty-cell {
   background:
     repeating-linear-gradient(

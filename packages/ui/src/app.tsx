@@ -1,17 +1,22 @@
 import { Toaster } from 'sonner';
 import { useSearchParams } from './hooks/use-search-params';
 import { DiffPage } from './components/diff-page';
+import { TreePage } from './components/tree-page';
 
 export function App() {
-  const { ref, theme, view } = useSearchParams();
+  const { ref, theme, view, mode } = useSearchParams();
 
   return (
     <>
-      <DiffPage
-        refParam={ref ?? 'work'}
-        initialTheme={theme}
-        initialViewMode={view}
-      />
+      {mode === 'tree' ? (
+        <TreePage initialTheme={theme} />
+      ) : (
+        <DiffPage
+          refParam={ref ?? 'work'}
+          initialTheme={theme}
+          initialViewMode={view}
+        />
+      )}
       <Toaster
         position="bottom-right"
         toastOptions={{

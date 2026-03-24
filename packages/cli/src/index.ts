@@ -21,6 +21,7 @@ import { registerListCommand } from './commands/list.js';
 import { registerPruneCommand } from './commands/prune.js';
 import { registerUpdateCommand } from './commands/update.js';
 import { registerDoctorCommand } from './commands/doctor.js';
+import { registerTreeCommand } from './commands/tree.js';
 import { SKILLS_HASH } from './generated/skills-hash.js';
 
 const require = createRequire(import.meta.url);
@@ -281,6 +282,7 @@ registerListCommand(program);
 registerPruneCommand(program);
 registerUpdateCommand(program, pkg.version, SKILLS_HASH);
 registerDoctorCommand(program, pkg.version);
+registerTreeCommand(program);
 registerAgentCommands(program);
 
 program.parse();

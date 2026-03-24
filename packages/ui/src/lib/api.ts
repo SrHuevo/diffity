@@ -242,3 +242,21 @@ export function pullCommentsFromGitHub(sessionId: string): Promise<PullCommentsR
     body: JSON.stringify({ sessionId }),
   });
 }
+
+export interface TreeEntryResponse {
+  type: 'blob' | 'tree';
+  path: string;
+  name: string;
+}
+
+export function fetchTreePaths(): Promise<{ paths: string[] }> {
+  return apiFetch('/api/tree');
+}
+
+export function fetchTreeEntries(dirPath?: string): Promise<{ entries: TreeEntryResponse[] }> {
+  return apiFetch(buildUrl('/api/tree/entries', { path: dirPath }));
+}
+
+export function fetchTreeInfo(): Promise<RepoInfo> {
+  return apiFetch('/api/tree/info');
+}

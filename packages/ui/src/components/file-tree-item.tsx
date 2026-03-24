@@ -13,6 +13,7 @@ interface FileTreeItemProps {
   commentCountsByFile: Map<string, number>;
   expandedDirs: Set<string>;
   onToggleDir: (path: string) => void;
+  onCollapseDir?: (path: string) => void;
   onFileClick: (path: string) => void;
 }
 
@@ -25,20 +26,47 @@ export function FileTreeItem(props: FileTreeItemProps) {
     commentCountsByFile,
     expandedDirs,
     onToggleDir,
+    onCollapseDir,
     onFileClick,
   } = props;
   const paddingLeft = depth * 12 + 8;
 
   if (node.type === 'dir') {
     const isExpanded = expandedDirs.has(node.path);
+
+    const handleRowClick = () => {
+      if (onCollapseDir) {
+        // GitHub-style: clicking row only expands, never collapses
+        if (!isExpanded) {
+          onToggleDir(node.path);
+        } else {
+          // Already expanded — just notify the dir was clicked (for content panel)
+          onToggleDir(node.path);
+        }
+      } else {
+        onToggleDir(node.path);
+      }
+    };
+
+    const handleChevronClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (onCollapseDir && isExpanded) {
+        onCollapseDir(node.path);
+      } else {
+        onToggleDir(node.path);
+      }
+    };
+
     return (
       <>
         <button
           className="flex items-center gap-1.5 w-full py-1 pr-2 text-left text-[13px] hover:bg-hover cursor-pointer"
           style={{ paddingLeft: `${paddingLeft}px` }}
-          onClick={() => onToggleDir(node.path)}
+          onClick={handleRowClick}
         >
-          <ChevronIcon expanded={isExpanded} />
+          <span onClick={handleChevronClick} className="flex items-center">
+            <ChevronIcon expanded={isExpanded} />
+          </span>
           <FolderIcon open={isExpanded} />
           <span className="truncate font-medium text-text-secondary">{node.name}</span>
         </button>
@@ -52,6 +80,7 @@ export function FileTreeItem(props: FileTreeItemProps) {
             commentCountsByFile={commentCountsByFile}
             expandedDirs={expandedDirs}
             onToggleDir={onToggleDir}
+            onCollapseDir={onCollapseDir}
             onFileClick={onFileClick}
           />
         ))}
@@ -76,7 +105,7 @@ export function FileTreeItem(props: FileTreeItemProps) {
       style={{ paddingLeft: `${paddingLeft + 15}px` }}
       onClick={() => onFileClick(node.path)}
     >
-      <StatusBadge status={node.file.status} compact />
+      {node.file && <StatusBadge status={node.file.status} compact />}
       <span className={cn('flex-1 min-w-0 truncate', isReviewed && 'line-through')}>
         {node.name}
       </span>

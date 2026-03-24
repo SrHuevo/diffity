@@ -6,6 +6,7 @@ function getParams() {
     ref: params.get('ref'),
     theme: params.get('theme') as 'light' | 'dark' | null,
     view: params.get('view') as 'split' | 'unified' | null,
+    mode: params.get('mode') as 'tree' | null,
   };
 }
 
