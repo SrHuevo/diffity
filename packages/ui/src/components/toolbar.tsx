@@ -1,20 +1,18 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import type { ParsedDiff } from '@diffity/parser';
 import { cn } from '../lib/cn';
 import { getFilePath } from '../lib/diff-utils';
 import { UnifiedViewIcon } from './icons/unified-view-icon';
 import { SplitViewIcon } from './icons/split-view-icon';
-import { SunIcon } from './icons/sun-icon';
-import { MoonIcon } from './icons/moon-icon';
 import { EyeIcon } from './icons/eye-icon';
 import { EyeOffIcon } from './icons/eye-off-icon';
 import { KeyboardIcon } from './icons/keyboard-icon';
-import { EllipsisIcon } from './icons/ellipsis-icon';
 import { GitBranchIcon } from './icons/git-branch-icon';
 import { GitHubIcon } from './icons/github-icon';
 import { DiffStats } from './diff-stats';
 import { GitHubDialog } from './github-dialog';
 import { CommentToolbarActions } from './comment-toolbar-actions';
+import { OptionsMenu, menuItemClass } from './options-menu';
 import { GENERAL_THREAD_FILE_PATH } from '../types/comment';
 import type { ViewMode } from '../lib/diff-utils';
 import type { CommentThread } from '../types/comment';
@@ -134,32 +132,15 @@ export function Toolbar(props: ToolbarProps) {
     sessionId,
     onGitHubPulled,
   } = props;
-  const [showMenu, setShowMenu] = useState(false);
   const [showGitHub, setShowGitHub] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   const formatForCopy = useCallback(() => {
     return formatThreadsForCopy(threads, diff, diffRef);
   }, [threads, diff, diffRef]);
 
-  useEffect(() => {
-    if (!showMenu) {
-      return;
-    }
-    function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setShowMenu(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [showMenu]);
-
   const baseBtn = 'px-2.5 py-1 text-xs text-text-secondary transition-colors duration-150 cursor-pointer';
   const activeBtn = 'bg-accent text-white';
   const inactiveBtn = 'bg-bg-tertiary hover:bg-hover hover:text-text';
-
-  const menuItemClass = 'flex items-center gap-2.5 w-full px-3 py-1.5 text-xs text-text-secondary hover:bg-hover hover:text-text transition-colors cursor-pointer text-left';
 
   return (
     <div className="flex items-center gap-3 px-4 py-1.5 bg-bg-secondary border-b border-border font-sans text-xs">
@@ -215,21 +196,16 @@ export function Toolbar(props: ToolbarProps) {
           onDeleteAllComments={onDeleteAllComments}
           formatForCopy={formatForCopy}
         />
-        <div className="relative" ref={menuRef}>
-          <button
-            className="p-1.5 rounded-md text-text-muted hover:text-text hover:bg-hover bg-bg-tertiary transition-colors cursor-pointer"
-            onClick={() => setShowMenu(!showMenu)}
-            title="More options"
-          >
-            <EllipsisIcon className="w-4 h-4" />
-          </button>
-          {showMenu && (
-            <div className="absolute right-0 top-full mt-1 w-48 py-1 bg-bg-secondary rounded-md shadow-lg ring-1 ring-border z-50">
+        <OptionsMenu
+          theme={theme}
+          onToggleTheme={onToggleTheme}
+          renderExtraItems={(close) => (
+            <>
               <button
                 className={menuItemClass}
                 onClick={() => {
                   onHideWhitespaceChange(!hideWhitespace);
-                  setShowMenu(false);
+                  close();
                 }}
               >
                 {hideWhitespace ? <EyeOffIcon className="w-3.5 h-3.5" /> : <EyeIcon className="w-3.5 h-3.5" />}
@@ -239,38 +215,17 @@ export function Toolbar(props: ToolbarProps) {
               <button
                 className={menuItemClass}
                 onClick={() => {
-                  onToggleTheme();
-                  setShowMenu(false);
-                }}
-              >
-                {theme === 'light' ? <MoonIcon className="w-3.5 h-3.5" /> : <SunIcon className="w-3.5 h-3.5" />}
-                {theme === 'light' ? 'Dark mode' : 'Light mode'}
-              </button>
-              <button
-                className={menuItemClass}
-                onClick={() => {
                   onShowHelp();
-                  setShowMenu(false);
+                  close();
                 }}
               >
                 <KeyboardIcon className="w-3.5 h-3.5" />
                 Keyboard shortcuts
                 <span className="ml-auto text-text-muted">?</span>
               </button>
-              <div className="border-t border-border my-1" />
-              <a
-                href="https://github.com/kamranahmedse/diffity"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={menuItemClass}
-                onClick={() => setShowMenu(false)}
-              >
-                <GitHubIcon className="w-3.5 h-3.5" />
-                GitHub
-              </a>
-            </div>
+            </>
           )}
-        </div>
+        />
       </div>
       {showGitHub && githubDetails && (
         <GitHubDialog

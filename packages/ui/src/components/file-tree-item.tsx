@@ -3,6 +3,7 @@ import { cn } from '../lib/cn';
 import { StatusBadge } from './ui/status-badge';
 import { ChevronIcon } from './icons/chevron-icon';
 import { FolderIcon } from './icons/folder-icon';
+import { FileIcon } from './icons/file-icon';
 import { CommentIcon } from './icons/comment-icon';
 
 interface FileTreeItemProps {
@@ -74,11 +75,11 @@ export function FileTreeItem(props: FileTreeItemProps) {
           onClick={handleRowClick}
           onContextMenu={handleContextMenu}
         >
-          <span onClick={handleChevronClick} className="flex items-center rounded p-0.5 hover:bg-black/15 dark:hover:bg-white/15 transition-colors">
+          <span onClick={handleChevronClick} className="relative flex items-center rounded p-0.5 hover:bg-border/70 transition-colors">
             <ChevronIcon expanded={isExpanded} />
           </span>
           <FolderIcon open={isExpanded} />
-          <span className="truncate font-medium text-text-secondary">{node.name}</span>
+          <span className="truncate text-text">{node.name}</span>
         </button>
         {isExpanded && node.children.map(child => (
           <FileTreeItem
@@ -129,8 +130,8 @@ export function FileTreeItem(props: FileTreeItemProps) {
         onFileClick(node.path);
       }}
     >
-      {node.file && <StatusBadge status={node.file.status} compact />}
-      <span className={cn('flex-1 min-w-0 truncate', isReviewed && 'line-through')}>
+      {node.file ? <StatusBadge status={node.file.status} compact /> : <FileIcon className="w-4 h-4 shrink-0 text-text-muted" />}
+      <span className={cn('flex-1 min-w-0 truncate text-text', isReviewed && 'line-through')}>
         {node.name}
       </span>
       {hasComments && (

@@ -14,9 +14,8 @@ import { FileViewer } from './file-viewer';
 import { PathComments } from './path-comments';
 import { CommentToolbarActions } from './comment-toolbar-actions';
 import { PageLoader } from './skeleton';
+import { OptionsMenu } from './options-menu';
 import { GitBranchIcon } from './icons/git-branch-icon';
-import { SunIcon } from './icons/sun-icon';
-import { MoonIcon } from './icons/moon-icon';
 
 interface TreePageProps {
   initialTheme?: 'light' | 'dark' | null;
@@ -293,13 +292,7 @@ export function TreePage(props: TreePageProps) {
             onDeleteAllComments={commentActions.deleteAllThreads}
             formatForCopy={formatForCopy}
           />
-          <button
-            className="p-1.5 rounded-md text-text-muted hover:text-text hover:bg-hover bg-bg-tertiary transition-colors cursor-pointer"
-            onClick={toggleTheme}
-            title={theme === 'light' ? 'Dark mode' : 'Light mode'}
-          >
-            {theme === 'light' ? <MoonIcon className="w-4 h-4" /> : <SunIcon className="w-4 h-4" />}
-          </button>
+          <OptionsMenu theme={theme} onToggleTheme={toggleTheme} />
         </div>
       </div>
 
