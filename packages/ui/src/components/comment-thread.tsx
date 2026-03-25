@@ -133,8 +133,6 @@ export function CommentThread(props: CommentThreadProps) {
     </td>
   );
 
-
-
   if (viewMode === 'split') {
     return (
       <tr data-thread-id={thread.id}>

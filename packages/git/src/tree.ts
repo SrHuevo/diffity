@@ -1,4 +1,4 @@
-import { exec, execLines } from './exec.js';
+import { execFileSync } from 'node:child_process';
 
 export interface TreeEntry {
   type: 'blob' | 'tree';
@@ -7,12 +7,20 @@ export interface TreeEntry {
 }
 
 export function getTree(ref = 'HEAD'): string[] {
-  return execLines(`git ls-tree -r --name-only ${ref}`);
+  const output = execFileSync('git', ['ls-tree', '-r', '--name-only', ref], {
+    encoding: 'utf-8',
+  }).trim();
+  if (!output) {
+    return [];
+  }
+  return output.split('\n');
 }
 
 export function getTreeEntries(ref = 'HEAD', dirPath?: string): TreeEntry[] {
   const target = dirPath ? `${ref}:${dirPath}` : ref;
-  const raw = exec(`git ls-tree ${target}`);
+  const raw = execFileSync('git', ['ls-tree', target], {
+    encoding: 'utf-8',
+  }).trim();
   if (!raw) {
     return [];
   }

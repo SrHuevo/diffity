@@ -38,15 +38,7 @@ export function FileTreeItem(props: FileTreeItemProps) {
     const isExpanded = expandedDirs.has(node.path);
 
     const handleRowClick = () => {
-      if (onCollapseDir) {
-        if (!isExpanded) {
-          onToggleDir(node.path);
-        } else {
-          onToggleDir(node.path);
-        }
-      } else {
-        onToggleDir(node.path);
-      }
+      onToggleDir(node.path);
     };
 
     const handleContextMenu = (e: React.MouseEvent) => {

@@ -51,11 +51,7 @@ export const TreeSidebar = forwardRef<HTMLInputElement, TreeSidebarProps>(functi
   const commentedFileCount = commentCountsByFile.size;
   const commentedFileCountLabel = commentedFileCount > 99 ? '99+' : String(commentedFileCount);
 
-  useEffect(() => {
-    if (commentedFileCount === 0 && commentedFilesOnly) {
-      setCommentedFilesOnly(false);
-    }
-  }, [commentedFileCount, commentedFilesOnly]);
+  const effectiveCommentedOnly = commentedFilesOnly && commentedFileCount > 0;
 
   // Auto-expand to active file
   useEffect(() => {
@@ -76,24 +72,24 @@ export const TreeSidebar = forwardRef<HTMLInputElement, TreeSidebarProps>(functi
   }, [activeFile, allDirPaths]);
 
   const effectiveExpanded = useMemo(() => {
-    if (search || commentedFilesOnly) {
-      const baseTree = commentedFilesOnly ? filterTreeToPaths(tree, commentedPaths) : tree;
+    if (search || effectiveCommentedOnly) {
+      const baseTree = effectiveCommentedOnly ? filterTreeToPaths(tree, commentedPaths) : tree;
       const filtered = search ? filterTree(baseTree, search) : baseTree;
       return new Set(collectAllDirPaths(filtered));
     }
     return expandedDirs ?? new Set<string>();
-  }, [search, commentedFilesOnly, tree, expandedDirs, allDirPaths, commentedPaths]);
+  }, [search, effectiveCommentedOnly, tree, expandedDirs, commentedPaths]);
 
   const displayTree = useMemo(() => {
     let result = tree;
-    if (commentedFilesOnly) {
+    if (effectiveCommentedOnly) {
       result = filterTreeToPaths(result, commentedPaths);
     }
     if (search) {
       result = filterTree(result, search);
     }
     return result;
-  }, [tree, search, commentedFilesOnly, commentedPaths]);
+  }, [tree, search, effectiveCommentedOnly, commentedPaths]);
 
   const allExpanded = effectiveExpanded.size >= allDirPaths.length;
 
@@ -105,7 +101,7 @@ export const TreeSidebar = forwardRef<HTMLInputElement, TreeSidebarProps>(functi
       return next;
     });
     onDirClick(path);
-  }, [allDirPaths, onDirClick]);
+  }, [onDirClick]);
 
   const handleCollapseDir = useCallback((path: string) => {
     setExpandedDirs(prev => {
@@ -113,7 +109,7 @@ export const TreeSidebar = forwardRef<HTMLInputElement, TreeSidebarProps>(functi
       next.delete(path);
       return next;
     });
-  }, [allDirPaths]);
+  }, []);
 
   const handleExpandOnly = useCallback((path: string) => {
     const parts = path.split('/');
@@ -199,18 +195,18 @@ export const TreeSidebar = forwardRef<HTMLInputElement, TreeSidebarProps>(functi
         {commentedFileCount > 0 && (
           <button
             className={`inline-flex items-center gap-1.5 shrink-0 h-8 px-2 rounded-md border transition-colors cursor-pointer ${
-              commentedFilesOnly
+              effectiveCommentedOnly
                 ? 'border-accent bg-accent/8 text-accent'
                 : 'border-border bg-bg hover:bg-hover text-text-secondary hover:text-text'
             }`}
             onClick={() => setCommentedFilesOnly(prev => !prev)}
-            title={commentedFilesOnly ? 'Show all files' : 'Show only files with open comments'}
-            aria-pressed={commentedFilesOnly}
+            title={effectiveCommentedOnly ? 'Show all files' : 'Show only files with open comments'}
+            aria-pressed={effectiveCommentedOnly}
           >
             <CommentIcon className="w-3.5 h-3.5" />
             <span
               className={`inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded-full text-[9px] font-semibold leading-none tabular-nums ${
-                commentedFilesOnly
+                effectiveCommentedOnly
                   ? 'bg-bg text-accent'
                   : 'bg-bg-tertiary text-text-secondary'
               }`}
@@ -225,7 +221,7 @@ export const TreeSidebar = forwardRef<HTMLInputElement, TreeSidebarProps>(functi
           <div className="px-4 py-6 text-center text-xs text-text-muted">
             {search
               ? 'No matching files'
-              : commentedFilesOnly
+              : effectiveCommentedOnly
                 ? 'No files with open comments'
                 : 'No files'}
           </div>
