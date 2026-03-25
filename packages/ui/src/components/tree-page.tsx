@@ -314,7 +314,12 @@ export function TreePage(props: TreePageProps) {
         />
 
         <main ref={mainRef} className="flex-1 overflow-y-auto p-6">
-          <nav className="flex items-center gap-1 mb-4 text-sm">
+          <PathComments
+            pathKey={pathKey}
+            threads={pathThreads}
+            commentActions={commentActions}
+            label={nav.path ? nav.path.split('/').pop()! : info?.name ?? 'root'}
+          >
             <button
               className={breadcrumbs.length > 0 ? 'text-accent hover:underline cursor-pointer' : 'text-text font-medium'}
               onClick={() => handleDirClick('')}
@@ -336,13 +341,7 @@ export function TreePage(props: TreePageProps) {
                 )}
               </span>
             ))}
-            <PathComments
-              pathKey={pathKey}
-              threads={pathThreads}
-              commentActions={commentActions}
-              label={nav.path ? nav.path.split('/').pop()! : info?.name ?? 'root'}
-            />
-          </nav>
+          </PathComments>
 
           {isFileMode ? (
             fileContent ? (

@@ -31,9 +31,7 @@ export function FolderViewer(props: FolderViewerProps) {
                   ) : (
                     <FileIcon />
                   )}
-                  <span className={entry.type === 'tree' ? 'font-medium text-text' : 'text-text-secondary'}>
-                    {entry.name}
-                  </span>
+                  <span className="text-text">{entry.name}</span>
                 </div>
               </td>
             </tr>

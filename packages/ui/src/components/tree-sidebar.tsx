@@ -67,7 +67,7 @@ export const TreeSidebar = forwardRef<HTMLInputElement, TreeSidebarProps>(functi
       return;
     }
     setExpandedDirs(prev => {
-      const next = new Set(prev ?? allDirPaths);
+      const next = new Set(prev ?? []);
       for (let i = 1; i < parts.length; i++) {
         next.add(parts.slice(0, i).join('/'));
       }
@@ -81,7 +81,7 @@ export const TreeSidebar = forwardRef<HTMLInputElement, TreeSidebarProps>(functi
       const filtered = search ? filterTree(baseTree, search) : baseTree;
       return new Set(collectAllDirPaths(filtered));
     }
-    return expandedDirs ?? new Set(allDirPaths);
+    return expandedDirs ?? new Set<string>();
   }, [search, commentedFilesOnly, tree, expandedDirs, allDirPaths, commentedPaths]);
 
   const displayTree = useMemo(() => {
@@ -100,7 +100,7 @@ export const TreeSidebar = forwardRef<HTMLInputElement, TreeSidebarProps>(functi
   // Expand only on click (no collapse); chevron handles collapse
   const handleExpandDir = useCallback((path: string) => {
     setExpandedDirs(prev => {
-      const next = new Set(prev ?? allDirPaths);
+      const next = new Set(prev ?? []);
       next.add(path);
       return next;
     });
@@ -109,11 +109,20 @@ export const TreeSidebar = forwardRef<HTMLInputElement, TreeSidebarProps>(functi
 
   const handleCollapseDir = useCallback((path: string) => {
     setExpandedDirs(prev => {
-      const next = new Set(prev ?? allDirPaths);
+      const next = new Set(prev ?? []);
       next.delete(path);
       return next;
     });
   }, [allDirPaths]);
+
+  const handleExpandOnly = useCallback((path: string) => {
+    const parts = path.split('/');
+    const next = new Set<string>();
+    for (let i = 1; i <= parts.length; i++) {
+      next.add(parts.slice(0, i).join('/'));
+    }
+    setExpandedDirs(next);
+  }, []);
 
   const emptyReviewedFiles = useMemo(() => new Set<string>(), []);
 
@@ -174,7 +183,7 @@ export const TreeSidebar = forwardRef<HTMLInputElement, TreeSidebarProps>(functi
             ref={ref}
             className="w-full h-8 pl-7 pr-7 border border-border rounded-md bg-bg text-xs outline-none focus:border-accent focus:ring-1 focus:ring-accent/20 placeholder:text-text-muted"
             type="text"
-            placeholder='Filter files... (press "/" to focus)'
+            placeholder='Press "/" to focus'
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -232,6 +241,7 @@ export const TreeSidebar = forwardRef<HTMLInputElement, TreeSidebarProps>(functi
               expandedDirs={effectiveExpanded}
               onToggleDir={handleExpandDir}
               onCollapseDir={handleCollapseDir}
+              onExpandOnly={handleExpandOnly}
               onFileClick={onFileClick}
             />
           ))
