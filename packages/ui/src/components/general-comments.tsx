@@ -67,7 +67,7 @@ export function GeneralComments(props: GeneralCommentsProps) {
           )}
           {threads.length > 0 ? (
             <div className="p-3 space-y-3">
-              {threads.map((thread) => (
+              {threads.map((thread, index) => (
                 <ThreadCard
                   key={thread.id}
                   thread={thread}
@@ -78,7 +78,12 @@ export function GeneralComments(props: GeneralCommentsProps) {
                   onDeleteComment={(commentId) => commentActions.deleteComment(thread.id, commentId)}
                   onDeleteThread={() => commentActions.deleteThread(thread.id)}
                   className="bg-bg-secondary"
-                  headerLeft={isThreadResolved(thread) && <ThreadBadge variant="resolved" />}
+                  headerLeft={
+                    <>
+                      <span className="text-[11px] text-text-muted font-mono">Thread #{index + 1}</span>
+                      {isThreadResolved(thread) && <ThreadBadge variant="resolved" />}
+                    </>
+                  }
                 />
               ))}
             </div>

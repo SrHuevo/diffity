@@ -14,6 +14,7 @@ interface FileTreeItemProps {
   expandedDirs: Set<string>;
   onToggleDir: (path: string) => void;
   onCollapseDir?: (path: string) => void;
+  onExpandOnly?: (path: string) => void;
   onFileClick: (path: string) => void;
 }
 
@@ -27,6 +28,7 @@ export function FileTreeItem(props: FileTreeItemProps) {
     expandedDirs,
     onToggleDir,
     onCollapseDir,
+    onExpandOnly,
     onFileClick,
   } = props;
   const paddingLeft = depth * 12 + 8;
@@ -36,16 +38,23 @@ export function FileTreeItem(props: FileTreeItemProps) {
 
     const handleRowClick = () => {
       if (onCollapseDir) {
-        // GitHub-style: clicking row only expands, never collapses
         if (!isExpanded) {
           onToggleDir(node.path);
         } else {
-          // Already expanded — just notify the dir was clicked (for content panel)
           onToggleDir(node.path);
         }
       } else {
         onToggleDir(node.path);
       }
+    };
+
+    const handleContextMenu = (e: React.MouseEvent) => {
+      if (!onExpandOnly) {
+        return;
+      }
+      e.preventDefault();
+      onExpandOnly(node.path);
+      onToggleDir(node.path);
     };
 
     const handleChevronClick = (e: React.MouseEvent) => {
@@ -63,8 +72,9 @@ export function FileTreeItem(props: FileTreeItemProps) {
           className="flex items-center gap-1.5 w-full py-1 pr-2 text-left text-[13px] hover:bg-hover cursor-pointer"
           style={{ paddingLeft: `${paddingLeft}px` }}
           onClick={handleRowClick}
+          onContextMenu={handleContextMenu}
         >
-          <span onClick={handleChevronClick} className="flex items-center">
+          <span onClick={handleChevronClick} className="flex items-center rounded p-0.5 hover:bg-black/15 dark:hover:bg-white/15 transition-colors">
             <ChevronIcon expanded={isExpanded} />
           </span>
           <FolderIcon open={isExpanded} />
@@ -81,6 +91,7 @@ export function FileTreeItem(props: FileTreeItemProps) {
             expandedDirs={expandedDirs}
             onToggleDir={onToggleDir}
             onCollapseDir={onCollapseDir}
+            onExpandOnly={onExpandOnly}
             onFileClick={onFileClick}
           />
         ))}
@@ -104,6 +115,19 @@ export function FileTreeItem(props: FileTreeItemProps) {
       )}
       style={{ paddingLeft: `${paddingLeft + 15}px` }}
       onClick={() => onFileClick(node.path)}
+      onContextMenu={(e) => {
+        if (!onExpandOnly) {
+          return;
+        }
+        e.preventDefault();
+        const parts = node.path.split('/');
+        if (parts.length > 1) {
+          onExpandOnly(parts.slice(0, -1).join('/'));
+        } else {
+          onExpandOnly('');
+        }
+        onFileClick(node.path);
+      }}
     >
       {node.file && <StatusBadge status={node.file.status} compact />}
       <span className={cn('flex-1 min-w-0 truncate', isReviewed && 'line-through')}>
