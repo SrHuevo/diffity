@@ -12,6 +12,15 @@ npm install -g diffity
 
 It works with Claude Code, Cursor, Codex, and any AI coding agent.
 
+| What can you do? | Description |
+|---|---|
+| [See your diffs](#see-your-diffs) | View changes across commits, branches, tags — right in your browser |
+| [AI code review](#ai-code-review) | Let your agent review code and leave comments you can actually act on |
+| [Browse project files](#browse-project-files) | Explore your repo and comment on any file, no diff needed |
+| [Guided code tours](#guided-code-tours) | Walk through your codebase step by step with highlighted code |
+| [GitHub PRs](#github-prs) | Pull down a PR, review it locally, push comments back to GitHub |
+| [Multiple projects](#multiple-projects) | Run it in multiple repos at once, each gets its own port |
+
 ## See your diffs
 
 Run `diffity` inside any git repo — your browser opens with a GitHub-style, syntax-highlighted diff.
@@ -39,7 +48,7 @@ diffity abc1234..def5678                   # changes between two commits
 
 The `--base`/`--compare` flags use the same terminology as GitHub PRs — base is what you're comparing against, compare is the branch with changes. You can also use range syntax (`main..feature`) or just pass two positional args (`diffity main feature`).
 
-You can leave comments on any diff — working tree changes, branch comparisons, commit ranges. Copy them into your agent with a button and ask it to resolve them, or use the skills below to let your agent auto-review and auto-solve them.
+You can leave comments on any diff — working tree changes, branch comparisons, commit ranges. Your agent can also review and leave its own comments. Either way, run `/diffity-resolve` and your agent reads all open comments (yours or its own) and makes the code changes for you.
 
 ## AI code review
 
