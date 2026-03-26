@@ -173,10 +173,16 @@ export function TreePage(props: TreePageProps) {
   const handleFileClick = useCallback((path: string) => {
     setNav(path, 'file');
     setPreviewMode('preview');
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
   }, [setNav]);
 
   const handleDirClick = useCallback((path: string) => {
     setNav(path, 'dir');
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
   }, [setNav]);
 
   const handleNavigate = useCallback((path: string, type: 'file' | 'dir') => {
