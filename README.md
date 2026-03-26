@@ -116,6 +116,24 @@ Reads open comments from the tree browser and makes the requested code changes:
 /diffity-resolve-tree abc123           # resolve a specific thread by ID
 ```
 
+## Guided code tours
+
+Create narrated, step-by-step walkthroughs of your codebase. Tours open in the browser with a sidebar showing the narrative and highlighted code sections.
+
+### `/diffity-tour`
+
+Your agent researches the codebase, then builds a tour with highlighted code regions and rich markdown explanations:
+
+```
+/diffity-tour how does authentication work?
+/diffity-tour explain the request lifecycle
+/diffity-tour how are comments stored and retrieved?
+```
+
+Each tour has an intro (step 0) with an architectural overview, followed by numbered steps that highlight specific code regions and explain them in detail. The agent follows the actual execution path, not file order.
+
+Tour steps can include **sub-highlights** — clickable focus links in the narrative that narrow the highlight to a specific sub-range within the step. Useful for walking through large functions section by section.
+
 ## GitHub PRs
 
 Pass a GitHub PR URL to view and review pull requests locally:
