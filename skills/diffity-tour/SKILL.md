@@ -35,13 +35,29 @@ diffity list --json
 
 ## Instructions
 
-### Phase 1: Research the codebase
+### Phase 1: Scope and research
 
-Before creating any tour steps, you must deeply understand the answer to the user's question. This is the most important phase.
+Before creating any tour steps, you must deeply understand the answer to the user's question.
 
-1. Read the relevant source files thoroughly. Follow the code path from entry point to completion.
-2. Identify the key locations that tell the story — the files and line ranges that someone needs to see to understand the answer.
-3. Plan a logical sequence of steps that builds understanding progressively. Each step should lead naturally to the next. Let the complexity of the topic determine the number of steps — a focused question might need 3, a system-wide flow might need 15+.
+1. **Scope the question.** Not every question is equally focused. Before researching, decide the right scope:
+   - **Focused question** (e.g. "how does the login endpoint validate tokens?") → follow one code path end-to-end, 3-6 steps
+   - **Feature question** (e.g. "how does authentication work?") → cover the feature's key flows and components, 6-10 steps
+   - **System question** (e.g. "how does the app work?") → cover the architecture at a higher level, touching key subsystems without going deep into any one. 8-15 steps. Focus on entry points, data flow, and how pieces connect.
+
+   If the question is too broad to answer well in a single tour (e.g. "explain everything"), mentally narrow it to the most interesting or important aspect and note in the intro what you're covering and what you're leaving out.
+
+2. **Identify the audience.** Consider how the question was phrased:
+   - "How does X work?" → assume someone **new to this codebase** — explain architectural decisions, not just code mechanics
+   - "Why does X do Y?" → assume someone **debugging or reviewing** — focus on the reasoning and edge cases
+   - "Walk me through X" → assume someone who wants the **full picture** — be thorough, include context
+
+3. **Research the codebase.** Read the relevant source files thoroughly. Follow the code path from entry point to completion.
+
+4. **Identify the key locations** that tell the story — the files and line ranges that someone needs to see to understand the answer.
+
+5. **Note configuration dependencies.** If the behavior changes based on environment variables, feature flags, config files, or runtime conditions, note these. They must be called out in the tour so the reader understands "this is what happens when X is configured, but if Y were set instead, the flow would differ here."
+
+6. **Plan a logical sequence** of steps that builds understanding progressively. Each step should lead naturally to the next.
 
 **Guidelines for choosing steps:**
 - Start where the flow begins (entry point, config, initialization)
@@ -50,6 +66,11 @@ Before creating any tour steps, you must deeply understand the answer to the use
 - End at the final outcome (response sent, data persisted, UI rendered)
 - Each step should cover a single concept or code section
 - Include concrete examples where possible (e.g. "when the user runs `diffity main`, this becomes...")
+
+**Handling cross-module flows:** When the code path crosses into a library, utility module, or deeply nested abstraction, decide whether to follow it:
+- **Follow it** if the logic there is essential to understanding the answer (e.g. a custom middleware that transforms the request)
+- **Summarize it** if the module does something standard or well-known (e.g. "this calls the Express router, which matches the path and invokes our handler") — mention what it does in the step body without creating a separate step for it
+- **Skip it** if it's pure boilerplate or plumbing (e.g. re-exports, type-only files)
 
 ### Phase 2: Create the tour
 
@@ -68,6 +89,9 @@ The tour UI has a dedicated explanation panel. The intro (from `tour-start --bod
    - How they connect — data flow, call chains, or dependency relationships
    - Key abstractions or patterns the reader should know about
    - A summary flow diagram using bold text (e.g. **CLI args → git diff → parser → JSON API → React render**)
+   - **Configuration context** — if the feature's behavior depends on config, environment variables, or feature flags, mention them here so the reader knows what mode/state the tour assumes
+
+   If you scoped down a broad question, state what you're covering: "This tour focuses on the OAuth login flow. Token refresh and session management are related but covered separately."
 
    Use rich markdown formatting — paragraphs, bold, `code`, tables, code blocks. This is not a table of contents of what the tour will cover; it's a standalone overview that orients the reader.
 
@@ -85,6 +109,14 @@ The tour UI has a dedicated explanation panel. The intro (from `tour-start --bod
    - `--annotation`: A short label (3-6 words) shown as the step title. Think of it as a chapter heading.
    - `--body`: The narrative shown in the explanation panel. This has generous space — use it to write thorough explanations using markdown:
 
+   **Step transitions — connecting the narrative:**
+   Each step should feel like a natural continuation of the previous one. Start each step body with a **transition sentence** that connects it to what came before:
+   - "Now that we've seen how the request is parsed, let's look at where it gets validated..."
+   - "The handler we just saw delegates to this service, which is where the actual business logic lives..."
+   - "At this point the data has been transformed and is ready to be persisted — here's how that happens..."
+
+   Never start a step as if the reader arrived out of context. The tour is a story — each step is a chapter, not an isolated paragraph.
+
    **Do:**
    - Write in prose paragraphs, supplemented by structured content where it helps
    - Use `code` for function names, variables, refs, commands. When referencing a function, class, or code symbol that lives in a **known file and line**, make it a **goto link** so the reader can click to jump there. Syntax: `` [`symbolName`](goto:path/to/file.ts:startLine-endLine) `` or `` [`symbolName`](goto:path/to/file.ts:line) `` for a single line. These render as clickable inline code that navigates to the file and highlights the target lines. Example: `` [`handleDragEnd`](goto:src/KanbanContent.jsx:42-58) ``. Use plain backtick code for generic terms, CLI commands, or symbols you haven't located in the codebase.
@@ -94,6 +126,7 @@ The tour UI has a dedicated explanation panel. The intro (from `tour-start --bod
    - Use tables for mappings (input → output, ref → git command)
    - Use code blocks for data structures or command outputs
    - Connect each step to the bigger picture from the intro
+   - **Call out edge cases and gotchas** — if there's a non-obvious behavior, a known limitation, or a "this looks wrong but it's intentional" moment, flag it. These are the things that trip people up when they work on this code later.
    - For large highlighted ranges, use **sub-highlight links** to focus on specific sub-sections within the step. Syntax: `[label](focus:startLine-endLine)`. These render as clickable chips that shift the highlight to the specified lines. Example:
 
      ```markdown
@@ -130,8 +163,18 @@ The tour UI has a dedicated explanation panel. The intro (from `tour-start --bod
    - Repeat information visible in the highlighted code
    - Use headers in step bodies (the annotation serves as the title)
    - Force a diagram into every step — only add one when it genuinely helps
+   - Start a step without connecting it to the previous one
 
-3. **Finish the tour:**
+3. **Add a conclusion step.** The final step of the tour should wrap things up. Reuse the file/line range from the last meaningful step and write a body that:
+
+   - **Summarizes the full flow** in 2-3 sentences — now that the reader has seen every piece, give them the zoomed-out mental model they can carry forward
+   - **Highlights the key design decisions** — what are the 2-3 most important architectural choices in this code, and why were they made?
+   - **Points out extension points** — if someone wanted to modify or extend this feature, where would they start? What files would they touch?
+   - **Notes related areas** — mention 1-2 related features or flows that connect to this one, so the reader knows where to explore next
+
+   Use the annotation `"Putting It Together"` for this step.
+
+4. **Finish the tour:**
    ```
    diffity agent tour-done --tour <id> --json
    ```
@@ -149,5 +192,13 @@ The tour UI has a dedicated explanation panel. The intro (from `tour-start --bod
 Before finishing, verify:
 
 - [ ] Intro (step 0) gives a thorough architectural overview, not a table of contents
+- [ ] If the question was scoped down, the intro states what is and isn't covered
+- [ ] Configuration dependencies (env vars, feature flags, config) are called out where relevant
 - [ ] Steps follow the actual execution/data flow, not alphabetical file order
+- [ ] Each step starts with a transition that connects it to the previous step
+- [ ] Design decisions and "why" are explained, not just "what the code does"
+- [ ] Edge cases and gotchas are flagged where they exist
 - [ ] No two consecutive steps highlight the same lines in the same file
+- [ ] Cross-module jumps are either followed, summarized, or skipped — not left unexplained
+- [ ] A conclusion step ties everything together with a mental model, design decisions, and extension points
+- [ ] Every function, class, or symbol reference with a known file location uses a goto link
