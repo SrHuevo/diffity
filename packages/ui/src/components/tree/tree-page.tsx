@@ -427,14 +427,16 @@ export function TreePage(props: TreePageProps) {
               </span>
             ))}
             {isFileMode && fileContent && isRenderableFile(navPath) && (
-              <SegmentedToggle
-                options={[
-                  { value: 'code', label: 'Code', icon: <CodeIcon className="w-3 h-3" /> },
-                  { value: 'preview', label: 'Preview', icon: <FileIcon className="w-3 h-3" /> },
-                ]}
-                value={previewMode}
-                onChange={setPreviewMode}
-              />
+              <div className="ml-3">
+                <SegmentedToggle
+                  options={[
+                    { value: 'code', label: 'Code', icon: <CodeIcon className="w-3 h-3" /> },
+                    { value: 'preview', label: 'Preview', icon: <FileIcon className="w-3 h-3" /> },
+                  ]}
+                  value={previewMode}
+                  onChange={setPreviewMode}
+                />
+              </div>
             )}
           </PathComments>
 
@@ -485,6 +487,7 @@ export function TreePage(props: TreePageProps) {
             onScrollToHighlight={handleTourScrollToHighlight}
             onSubHighlight={handleTourSubHighlight}
             filePaths={paths}
+            editor={info?.editor}
           />
         )}
       </div>

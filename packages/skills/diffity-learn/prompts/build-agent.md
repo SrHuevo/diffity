@@ -103,6 +103,7 @@ After the code is written and verified, create a tour that teaches the concept t
     > **Try it:** Uncomment line 14 and run `cargo run` again. The compiler error you see is one of Rust's most important safety features.
   - Use **bold** for concept terms being introduced, `code` for symbols
   - Use [sub-highlights](focus:startLine-endLine) for steps covering 30+ lines
+  - **Use goto links for ALL line references.** When you mention a line number, make it clickable so the reader jumps to that line. Syntax: `[line 14](goto:path/to/file.rs:14)` or `[lines 22-23](goto:path/to/file.rs:22-23)`. For symbols in known files: `` [`age`](goto:path/to/file.rs:3) ``. NEVER write bare "line 23" or "Go to line 3" — always make them goto links.
 - 3-6 steps total. Be thorough in each step but don't repeat across steps.
 
 **Finish the tour:**

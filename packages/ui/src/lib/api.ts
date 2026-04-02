@@ -54,6 +54,7 @@ export interface RepoInfo {
   capabilities?: { reviews: boolean; revert: boolean; staleness: boolean };
   sessionId?: string | null;
   github?: GitHubRemote | null;
+  editor?: 'vscode' | null;
 }
 
 export interface Commit {
@@ -91,6 +92,14 @@ export async function fetchDiffFingerprint(ref?: string): Promise<string> {
 
 export function fetchRepoInfo(ref?: string): Promise<RepoInfo> {
   return apiFetch(buildUrl('/api/info', { ref }));
+}
+
+export function openInEditor(filePath: string, line?: number): Promise<{ ok: boolean }> {
+  return apiFetch('/api/open-in-editor', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filePath, line }),
+  });
 }
 
 export function fetchOverview(): Promise<Overview> {

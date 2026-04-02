@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import ReactMarkdown, { defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Tour } from '../../lib/api';
+import { openInEditor } from '../../lib/api';
 import { CompassIcon } from '../icons/compass-icon';
 import { XIcon } from '../icons/x-icon';
 import { SidebarIcon } from '../icons/sidebar-icon';
@@ -17,6 +18,7 @@ interface TourPanelProps {
   onScrollToHighlight?: () => void;
   onSubHighlight?: (startLine: number, endLine: number, label: string) => void;
   filePaths?: string[];
+  editor?: 'vscode' | null;
 }
 
 function resolveFilePath(text: string, filePaths: Set<string> | undefined): string | null {
@@ -176,7 +178,7 @@ const MAX_WIDTH = 700;
 const DEFAULT_WIDTH = 384;
 
 export function TourPanel(props: TourPanelProps) {
-  const { tour, currentStepIndex, onStepChange, onClose, onNavigateToFile, onNavigateToFileLine, onScrollToHighlight, onSubHighlight, filePaths } = props;
+  const { tour, currentStepIndex, onStepChange, onClose, onNavigateToFile, onNavigateToFileLine, onScrollToHighlight, onSubHighlight, filePaths, editor } = props;
 
   const [collapsed, setCollapsed] = useState(false);
   const [width, setWidth] = useState(DEFAULT_WIDTH);
@@ -340,13 +342,22 @@ export function TourPanel(props: TourPanelProps) {
               <TourMarkdown content={currentStep.body} onNavigateToFile={onNavigateToFile} onNavigateToFileLine={onNavigateToFileLine} onSubHighlight={onSubHighlight} filePaths={filePathSet} />
             </div>
 
-            <div className="mt-4 pt-2">
+            <div className="mt-4 pt-2 flex items-center gap-2">
               <button
                 className="text-[10px] text-text-muted font-mono truncate hover:text-accent cursor-pointer transition-colors"
                 onClick={() => onScrollToHighlight?.()}
               >
                 {currentStep.filePath}:{lineRange}
               </button>
+              {editor === 'vscode' && (
+                <button
+                  className="shrink-0 text-[10px] text-text-muted hover:text-accent cursor-pointer transition-colors"
+                  onClick={() => openInEditor(currentStep.filePath, currentStep.startLine)}
+                  title="Open in VS Code"
+                >
+                  Open in editor
+                </button>
+              )}
             </div>
           </>
         ) : null}

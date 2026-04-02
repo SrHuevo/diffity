@@ -1,6 +1,5 @@
 import { isRouteErrorResponse } from "react-router";
 import { AlertCircleIcon } from "./icons/alert-circle-icon";
-import { DiffityIcon } from "./icons/diffity-icon";
 
 type ErrorPageProps = {
   error: unknown;
@@ -33,13 +32,7 @@ export function ErrorPage(props: ErrorPageProps) {
   return (
     <div className="flex items-center justify-center h-screen bg-bg text-text">
       <div className="max-w-lg text-center px-6">
-        <div className="flex items-center justify-center gap-2 mb-8 text-text-muted">
-          <DiffityIcon className="w-5 h-5" />
-          <span className="text-sm font-medium tracking-wide">diffity</span>
-        </div>
-        <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-bg-tertiary flex items-center justify-center">
-          <AlertCircleIcon className="w-6 h-6 text-text-muted" />
-        </div>
+        <AlertCircleIcon className="w-5 h-5 mx-auto mb-4 text-red-400" />
         <h1 className="text-lg font-semibold mb-2">{title}</h1>
         <p className="text-sm text-text-secondary mb-6">{message}</p>
         {detail && (

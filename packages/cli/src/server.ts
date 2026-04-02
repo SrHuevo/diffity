@@ -4,6 +4,7 @@ import {
   type ServerResponse,
 } from 'node:http';
 import { createHash } from 'node:crypto';
+import { execSync, execFile } from 'node:child_process';
 import { readFileSync, existsSync } from 'node:fs';
 import { join, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -159,6 +160,14 @@ export function startServer(options: ServerOptions): Promise<ServerResult> {
   const githubRemote = detectGitHubRemote();
   const uiDir = join(__dirname, 'ui/client');
 
+  let editorAvailable: 'vscode' | null = null;
+  try {
+    execSync('which code', { stdio: 'pipe' });
+    editorAvailable = 'vscode';
+  } catch {
+    // VS Code CLI not found
+  }
+
   const server = createServer(
     async (req: IncomingMessage, res: ServerResponse) => {
       try {
@@ -206,6 +215,29 @@ export function startServer(options: ServerOptions): Promise<ServerResult> {
             sendJson(res, { ok: true });
           } catch (err) {
             sendError(res, 500, `Failed to revert hunk: ${err}`);
+          }
+          return;
+        }
+
+        if (pathname === '/api/open-in-editor' && req.method === 'POST') {
+          if (!editorAvailable) {
+            sendError(res, 404, 'No editor available');
+            return;
+          }
+          try {
+            const body = JSON.parse(await readBody(req));
+            const { filePath, line } = body;
+            if (!filePath || typeof filePath !== 'string') {
+              sendError(res, 400, 'Missing filePath');
+              return;
+            }
+            const repoRoot = getRepoInfo().root;
+            const fullPath = join(repoRoot, filePath);
+            const gotoArg = line ? `${fullPath}:${line}` : fullPath;
+            execFile('code', ['--goto', gotoArg], { timeout: 5000 }, () => {});
+            sendJson(res, { ok: true });
+          } catch (err) {
+            sendError(res, 500, `Failed to open editor: ${err}`);
           }
           return;
         }
@@ -343,6 +375,7 @@ export function startServer(options: ServerOptions): Promise<ServerResult> {
             capabilities,
             sessionId,
             github: githubRemote,
+            editor: editorAvailable,
           });
           return;
         }
@@ -520,6 +553,7 @@ export function startServer(options: ServerOptions): Promise<ServerResult> {
             capabilities: { reviews: true, revert: false, staleness: false },
             sessionId: session.id,
             github: githubRemote,
+            editor: editorAvailable,
           });
           return;
         }
