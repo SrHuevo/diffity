@@ -258,7 +258,7 @@ The rule: **if concept B can't be demonstrated without concept A, they belong in
    In chat, keep feedback short — the detailed feedback is in the Diffity comments. Just summarize: "Passed — nice work. Check the browser for inline feedback. One thing to look at: [teaching moment from verify summary]."
 
 **8. When a lesson is complete:**
-   - Spawn the readme agent (background) to write the lesson README
+   - Spawn the readme agent to write the lesson README. **Wait for it to finish before moving on** — the README is the user's reference notes and must exist before the lesson is considered done.
    - Update learn.json — mark lesson complete, append to sessionLog
    - If the plan is running low on lessons, spawn the plan agent (background) to plan more
    - Start the next lesson

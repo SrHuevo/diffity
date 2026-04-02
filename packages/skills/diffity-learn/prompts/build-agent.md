@@ -103,7 +103,23 @@ After the code is written and verified, create a tour that teaches the concept t
     > **Try it:** Uncomment line 14 and run `cargo run` again. The compiler error you see is one of Rust's most important safety features.
   - Use **bold** for concept terms being introduced, `code` for symbols
   - Use [sub-highlights](focus:startLine-endLine) for steps covering 30+ lines
-  - **Use goto links for ALL line references.** When you mention a line number, make it clickable so the reader jumps to that line. Syntax: `[line 14](goto:path/to/file.rs:14)` or `[lines 22-23](goto:path/to/file.rs:22-23)`. For symbols in known files: `` [`age`](goto:path/to/file.rs:3) ``. NEVER write bare "line 23" or "Go to line 3" — always make them goto links.
+  - Use [sub-highlights](focus:startLine-endLine) for steps covering 30+ lines
+
+**IMPORTANT — Goto links for ALL line references:**
+Every time you mention a line number in a tour step body, it MUST be a clickable goto link. The reader should be able to click to jump to that line.
+
+Syntax:
+- `[line 14](goto:path/to/file.rs:14)` — single line
+- `[lines 22-23](goto:path/to/file.rs:22-23)` — line range
+- `` [`age`](goto:path/to/file.rs:3) `` — symbol at a line
+
+Examples of what to write:
+- "Look at [line 5](goto:lesson-01/agent-1/src/main.rs:5) — this declares..."
+- "On [lines 8-10](goto:lesson-01/agent-1/src/main.rs:8-10), the function..."
+- "Notice [`is_even`](goto:lesson-01/agent-1/src/main.rs:12) returns a bool"
+
+NEVER write bare "line 12" or "Line 5:" or "Go to line 3" without a goto link.
+
 - 3-6 steps total. Be thorough in each step but don't repeat across steps.
 
 **Finish the tour:**

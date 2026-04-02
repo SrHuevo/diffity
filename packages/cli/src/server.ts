@@ -234,7 +234,7 @@ export function startServer(options: ServerOptions): Promise<ServerResult> {
             const repoRoot = getRepoInfo().root;
             const fullPath = join(repoRoot, filePath);
             const gotoArg = line ? `${fullPath}:${line}` : fullPath;
-            execFile('code', ['--goto', gotoArg], { timeout: 5000 }, () => {});
+            execFile('code', [repoRoot, '--goto', gotoArg], { timeout: 5000 }, () => {});
             sendJson(res, { ok: true });
           } catch (err) {
             sendError(res, 500, `Failed to open editor: ${err}`);

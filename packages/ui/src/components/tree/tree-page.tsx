@@ -1,7 +1,22 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { useSearchParams as useRouterSearchParams, useNavigate, useLoaderData } from 'react-router';
-import { useQuery, useSuspenseQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { treePathsOptions, treeInfoOptions, treeFileContentOptions, treeEntriesOptions, tourOptions } from '../../queries/tree';
+import {
+  useSearchParams as useRouterSearchParams,
+  useNavigate,
+  useLoaderData,
+} from 'react-router';
+import {
+  useQuery,
+  useSuspenseQuery,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query';
+import {
+  treePathsOptions,
+  treeInfoOptions,
+  treeFileContentOptions,
+  treeEntriesOptions,
+  tourOptions,
+} from '../../queries/tree';
 import { useTheme } from '../../hooks/use-theme';
 import { useReviewThreads } from '../../hooks/use-review-threads';
 import { useCommentActions } from '../../hooks/use-comment-actions';
@@ -23,6 +38,8 @@ import { CodeIcon } from '../icons/code-icon';
 import { FileIcon } from '../icons/file-icon';
 import { SegmentedToggle } from '../ui/segmented-toggle';
 import { TourPanel } from './tour-panel';
+import { openInEditor } from '../../lib/api';
+import { PencilIcon } from '../icons/pencil-icon';
 
 interface TreePageProps {
   tourId?: string;
@@ -31,7 +48,9 @@ interface TreePageProps {
 }
 
 function formatTreeThreadsForCopy(threads: CommentThread[]): string {
-  const unresolvedThreads = threads.filter(t => !isThreadResolved(t) && t.filePath !== GENERAL_THREAD_FILE_PATH);
+  const unresolvedThreads = threads.filter(
+    (t) => !isThreadResolved(t) && t.filePath !== GENERAL_THREAD_FILE_PATH,
+  );
   if (unresolvedThreads.length === 0) {
     return '';
   }
@@ -41,11 +60,14 @@ function formatTreeThreadsForCopy(threads: CommentThread[]): string {
   for (const thread of unresolvedThreads) {
     if (thread.filePath.startsWith('__path__:')) {
       const pathLabel = thread.filePath.slice('__path__:'.length);
-      parts.push(`## Comment on ${pathLabel === '__root__' ? 'root' : pathLabel}`);
+      parts.push(
+        `## Comment on ${pathLabel === '__root__' ? 'root' : pathLabel}`,
+      );
     } else {
-      const lineRange = thread.startLine === thread.endLine
-        ? `${thread.startLine}`
-        : `${thread.startLine}-${thread.endLine}`;
+      const lineRange =
+        thread.startLine === thread.endLine
+          ? `${thread.startLine}`
+          : `${thread.startLine}-${thread.endLine}`;
       parts.push(`## ${thread.filePath}:${lineRange}`);
     }
 
@@ -55,14 +77,15 @@ function formatTreeThreadsForCopy(threads: CommentThread[]): string {
       parts.push('```');
     }
 
-    const uniqueAuthors = new Set(thread.comments.map(c => c.author.name));
+    const uniqueAuthors = new Set(thread.comments.map((c) => c.author.name));
     const singleAuthor = uniqueAuthors.size === 1;
 
     for (const comment of thread.comments) {
       if (singleAuthor) {
         parts.push(comment.body);
       } else {
-        const authorName = comment.author.name === 'You' ? 'User' : comment.author.name;
+        const authorName =
+          comment.author.name === 'You' ? 'User' : comment.author.name;
         parts.push(`**${authorName}:** ${comment.body}`);
       }
     }
@@ -78,40 +101,63 @@ export function TreePage(props: TreePageProps) {
   const loaderData = useLoaderData<{ theme?: 'light' | 'dark' | null }>();
   const [searchParams, setSearchParams] = useRouterSearchParams();
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme(initialTheme ?? loaderData?.theme ?? null);
+  const { theme, toggleTheme } = useTheme(
+    initialTheme ?? loaderData?.theme ?? null,
+  );
   const queryClient = useQueryClient();
   const { isStale, resetStaleness } = useTreeStaleness();
 
-  const [internalNav, setInternalNav] = useState<{ path: string; type: 'file' | 'dir' }>({ path: '', type: 'dir' });
+  const [internalNav, setInternalNav] = useState<{
+    path: string;
+    type: 'file' | 'dir';
+  }>({ path: '', type: 'dir' });
   const isTourMode = !!tourId;
 
-  const navPath = isTourMode ? internalNav.path : (searchParams.get('path') || '');
-  const navType = isTourMode ? internalNav.type : ((searchParams.get('type') || 'dir') as 'file' | 'dir');
+  const navPath = isTourMode
+    ? internalNav.path
+    : searchParams.get('path') || '';
+  const navType = isTourMode
+    ? internalNav.type
+    : ((searchParams.get('type') || 'dir') as 'file' | 'dir');
 
-  const setNav = useCallback((path: string, type: 'file' | 'dir') => {
-    if (isTourMode) {
-      setInternalNav({ path, type });
-    } else if (type === 'file') {
-      setSearchParams({ path, type: 'file' });
-    } else if (path) {
-      setSearchParams({ path });
-    } else {
-      setSearchParams({});
-    }
-  }, [isTourMode, setSearchParams]);
+  const setNav = useCallback(
+    (path: string, type: 'file' | 'dir') => {
+      if (isTourMode) {
+        setInternalNav({ path, type });
+      } else if (type === 'file') {
+        setSearchParams({ path, type: 'file' });
+      } else if (path) {
+        setSearchParams({ path });
+      } else {
+        setSearchParams({});
+      }
+    },
+    [isTourMode, setSearchParams],
+  );
 
   const [focusedThreadId, setFocusedThreadId] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState<'preview' | 'code'>('preview');
   const tourStepIndex = tourStepIndexProp ?? 0;
   const [tourScrollTick, setTourScrollTick] = useState(0);
-  const [tourSubHighlight, setTourSubHighlight] = useState<{ startLine: number; endLine: number; label: string } | null>(null);
-  const [gotoHighlight, setGotoHighlight] = useState<{ filePath: string; startLine: number; endLine: number } | null>(null);
+  const [tourSubHighlight, setTourSubHighlight] = useState<{
+    startLine: number;
+    endLine: number;
+    label: string;
+  } | null>(null);
+  const [gotoHighlight, setGotoHighlight] = useState<{
+    filePath: string;
+    startLine: number;
+    endLine: number;
+  } | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mainRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
         return;
       }
       if (e.key === '/') {
@@ -172,71 +218,90 @@ export function TreePage(props: TreePageProps) {
 
   const paths = treeData?.paths ?? [];
 
-  const handleFileClick = useCallback((path: string) => {
-    setNav(path, 'file');
-    setPreviewMode('preview');
-    if (mainRef.current) {
-      mainRef.current.scrollTop = 0;
-    }
-  }, [setNav]);
+  const handleFileClick = useCallback(
+    (path: string) => {
+      setNav(path, 'file');
+      setPreviewMode('preview');
+      if (mainRef.current) {
+        mainRef.current.scrollTop = 0;
+      }
+    },
+    [setNav],
+  );
 
-  const handleDirClick = useCallback((path: string) => {
-    setNav(path, 'dir');
-    if (mainRef.current) {
-      mainRef.current.scrollTop = 0;
-    }
-  }, [setNav]);
+  const handleDirClick = useCallback(
+    (path: string) => {
+      setNav(path, 'dir');
+      if (mainRef.current) {
+        mainRef.current.scrollTop = 0;
+      }
+    },
+    [setNav],
+  );
 
-  const handleNavigate = useCallback((path: string, type: 'file' | 'dir') => {
-    if (type === 'file') {
-      handleFileClick(path);
-    } else {
-      handleDirClick(path);
-    }
-  }, [handleFileClick, handleDirClick]);
+  const handleNavigate = useCallback(
+    (path: string, type: 'file' | 'dir') => {
+      if (type === 'file') {
+        handleFileClick(path);
+      } else {
+        handleDirClick(path);
+      }
+    },
+    [handleFileClick, handleDirClick],
+  );
 
   const scrollToThreadElement = useCallback((threadId: string) => {
     const el = document.querySelector(`[data-thread-id="${threadId}"]`);
     if (el) {
-      el.dispatchEvent(new CustomEvent('diffity:focus-thread', { bubbles: false }));
+      el.dispatchEvent(
+        new CustomEvent('diffity:focus-thread', { bubbles: false }),
+      );
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       el.classList.add('flash-thread');
       setTimeout(() => el.classList.remove('flash-thread'), 1500);
     }
   }, []);
 
-  const handleScrollToThread = useCallback(async (threadId: string, filePath: string) => {
-    const isPathComment = filePath.startsWith('__path__:');
-    let targetPath = filePath;
-    let targetType: 'file' | 'dir' = 'file';
+  const handleScrollToThread = useCallback(
+    async (threadId: string, filePath: string) => {
+      const isPathComment = filePath.startsWith('__path__:');
+      let targetPath = filePath;
+      let targetType: 'file' | 'dir' = 'file';
 
-    if (isPathComment) {
-      setFocusedThreadId(threadId);
-      const rawPath = filePath.slice('__path__:'.length);
-      targetPath = rawPath === '__root__' ? '' : rawPath;
-      const isFile = paths.includes(targetPath);
-      targetType = isFile ? 'file' : 'dir';
-    }
-
-    const needsNavigation = targetPath !== navPath || (targetType === 'file' && navType !== 'file') || (targetType === 'dir' && navType !== 'dir');
-
-    if (needsNavigation) {
-      if (targetType === 'file') {
-        await queryClient.ensureQueryData(treeFileContentOptions(targetPath));
-      } else {
-        await queryClient.ensureQueryData(treeEntriesOptions(targetPath || undefined));
+      if (isPathComment) {
+        setFocusedThreadId(threadId);
+        const rawPath = filePath.slice('__path__:'.length);
+        targetPath = rawPath === '__root__' ? '' : rawPath;
+        const isFile = paths.includes(targetPath);
+        targetType = isFile ? 'file' : 'dir';
       }
-      setNav(targetPath, targetType);
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          scrollToThreadElement(threadId);
-        });
-      });
-      return;
-    }
 
-    scrollToThreadElement(threadId);
-  }, [navPath, navType, queryClient, paths, scrollToThreadElement, setNav]);
+      const needsNavigation =
+        targetPath !== navPath ||
+        (targetType === 'file' && navType !== 'file') ||
+        (targetType === 'dir' && navType !== 'dir');
+
+      if (needsNavigation) {
+        if (targetType === 'file') {
+          await queryClient.ensureQueryData(treeFileContentOptions(targetPath));
+        } else {
+          await queryClient.ensureQueryData(
+            treeEntriesOptions(targetPath || undefined),
+          );
+        }
+        setNav(targetPath, targetType);
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            scrollToThreadElement(threadId);
+          });
+        });
+        return;
+      }
+
+      scrollToThreadElement(threadId);
+    },
+    [navPath, navType, queryClient, paths, scrollToThreadElement, setNav],
+  );
 
   const handleRefreshTree = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['tree-paths'] });
@@ -245,33 +310,42 @@ export function TreePage(props: TreePageProps) {
     resetStaleness();
   }, [queryClient, resetStaleness]);
 
-  const handleTourStepChange = useCallback((index: number) => {
-    if (!tourId) {
-      return;
-    }
-    setTourScrollTick(t => t + 1);
-    navigate(`/tour/${tourId}/${index}`);
-  }, [tourId, navigate]);
+  const handleTourStepChange = useCallback(
+    (index: number) => {
+      if (!tourId) {
+        return;
+      }
+      setTourScrollTick((t) => t + 1);
+      navigate(`/tour/${tourId}/${index}`);
+    },
+    [tourId, navigate],
+  );
 
   const handleTourScrollToHighlight = useCallback(() => {
     setTourSubHighlight(null);
     setGotoHighlight(null);
-    setTourScrollTick(t => t + 1);
+    setTourScrollTick((t) => t + 1);
   }, []);
 
-  const handleTourSubHighlight = useCallback((startLine: number, endLine: number, label: string) => {
-    setGotoHighlight(null);
-    setTourSubHighlight({ startLine, endLine, label });
-    setTourScrollTick(t => t + 1);
-  }, []);
+  const handleTourSubHighlight = useCallback(
+    (startLine: number, endLine: number, label: string) => {
+      setGotoHighlight(null);
+      setTourSubHighlight({ startLine, endLine, label });
+      setTourScrollTick((t) => t + 1);
+    },
+    [],
+  );
 
-  const handleGotoFileLine = useCallback((path: string, startLine: number, endLine: number) => {
-    setTourSubHighlight(null);
-    setInternalNav({ path, type: 'file' });
-    setPreviewMode('code');
-    setGotoHighlight({ filePath: path, startLine, endLine });
-    setTourScrollTick(t => t + 1);
-  }, []);
+  const handleGotoFileLine = useCallback(
+    (path: string, startLine: number, endLine: number) => {
+      setTourSubHighlight(null);
+      setInternalNav({ path, type: 'file' });
+      setPreviewMode('code');
+      setGotoHighlight({ filePath: path, startLine, endLine });
+      setTourScrollTick((t) => t + 1);
+    },
+    [],
+  );
 
   const handleTourClose = useCallback(() => {
     navigate('/tree');
@@ -312,7 +386,13 @@ export function TreePage(props: TreePageProps) {
       annotation: step.annotation,
       scrollTick: tourScrollTick,
     };
-  }, [tourData, tourStepIndex, tourScrollTick, tourSubHighlight, gotoHighlight]);
+  }, [
+    tourData,
+    tourStepIndex,
+    tourScrollTick,
+    tourSubHighlight,
+    gotoHighlight,
+  ]);
 
   useEffect(() => {
     setTourSubHighlight(null);
@@ -344,31 +424,35 @@ export function TreePage(props: TreePageProps) {
   }, [navPath]);
 
   const pathKey = navPath || '__root__';
-  const fileThreads = threads.filter(t => t.filePath === navPath);
-  const pathThreads = threads.filter(t => t.filePath === `__path__:${pathKey}` );
+  const fileThreads = threads.filter((t) => t.filePath === navPath);
+  const pathThreads = threads.filter(
+    (t) => t.filePath === `__path__:${pathKey}`,
+  );
   const entries = entriesData?.entries ?? [];
 
   return (
-    <div className="flex flex-col h-screen bg-bg text-text">
-      <div className="flex items-center gap-3 px-4 py-1.5 bg-bg-secondary border-b border-border font-sans text-xs">
-        <div className="flex items-center gap-2.5 min-w-0 shrink">
+    <div className='flex flex-col h-screen bg-bg text-text'>
+      <div className='flex items-center gap-3 px-4 py-1.5 bg-bg-secondary border-b border-border font-sans text-xs'>
+        <div className='flex items-center gap-2.5 min-w-0 shrink'>
           {info?.name && (
             <button
-              className="font-semibold text-text text-sm truncate hover:text-accent transition-colors cursor-pointer"
+              className='font-semibold text-text text-sm truncate hover:text-accent transition-colors cursor-pointer'
               onClick={() => handleDirClick('')}
             >
               {info.name}
             </button>
           )}
           {info?.branch && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-diff-hunk-bg text-diff-hunk-text rounded font-mono text-[11px] shrink-0">
-              <GitBranchIcon className="w-3 h-3" />
+            <span className='inline-flex items-center gap-1 px-1.5 py-0.5 bg-diff-hunk-bg text-diff-hunk-text rounded font-mono text-[11px] shrink-0'>
+              <GitBranchIcon className='w-3 h-3' />
               {info.branch}
             </span>
           )}
-          <span className="text-text-muted truncate hidden lg:inline">Repository browser</span>
+          <span className='text-text-muted truncate hidden lg:inline'>
+            Repository browser
+          </span>
         </div>
-        <div className="flex items-center gap-2 ml-auto shrink-0">
+        <div className='flex items-center gap-2 ml-auto shrink-0'>
           <CommentToolbarActions
             threads={threads}
             onScrollToThread={handleScrollToThread}
@@ -382,11 +466,11 @@ export function TreePage(props: TreePageProps) {
       {isStale && (
         <StaleDiffBanner
           onRefresh={handleRefreshTree}
-          message="Files have changed since this tree was loaded"
+          message='Files have changed since this tree was loaded'
         />
       )}
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className='flex flex-1 overflow-hidden'>
         <TreeSidebar
           ref={searchInputRef}
           paths={paths}
@@ -397,28 +481,32 @@ export function TreePage(props: TreePageProps) {
           focusFileTick={isTourMode ? tourScrollTick : undefined}
         />
 
-        <main ref={mainRef} className="flex-1 overflow-y-auto p-6">
+        <main ref={mainRef} className='flex-1 overflow-y-auto p-6'>
           <PathComments
             pathKey={pathKey}
             threads={pathThreads}
             commentActions={commentActions}
-            label={navPath ? navPath.split('/').pop()! : info.name ?? 'root'}
+            label={navPath ? navPath.split('/').pop()! : (info.name ?? 'root')}
             focusedThreadId={focusedThreadId}
           >
             <button
-              className={breadcrumbs.length > 0 ? 'text-accent hover:underline cursor-pointer' : 'text-text font-medium'}
+              className={
+                breadcrumbs.length > 0
+                  ? 'text-accent hover:underline cursor-pointer'
+                  : 'text-text font-medium'
+              }
               onClick={() => handleDirClick('')}
             >
               {info.name ?? 'root'}
             </button>
-            {breadcrumbs.map(crumb => (
-              <span key={crumb.path} className="flex items-center gap-1">
-                <span className="text-text-muted">/</span>
+            {breadcrumbs.map((crumb) => (
+              <span key={crumb.path} className='flex items-center gap-1'>
+                <span className='text-text-muted'>/</span>
                 {crumb.isLast ? (
-                  <span className="text-text font-medium">{crumb.name}</span>
+                  <span className='text-text font-medium'>{crumb.name}</span>
                 ) : (
                   <button
-                    className="text-accent hover:underline cursor-pointer"
+                    className='text-accent hover:underline cursor-pointer'
                     onClick={() => handleDirClick(crumb.path)}
                   >
                     {crumb.name}
@@ -427,16 +515,33 @@ export function TreePage(props: TreePageProps) {
               </span>
             ))}
             {isFileMode && fileContent && isRenderableFile(navPath) && (
-              <div className="ml-3">
+              <div className='ml-3 -mr-2'>
                 <SegmentedToggle
                   options={[
-                    { value: 'code', label: 'Code', icon: <CodeIcon className="w-3 h-3" /> },
-                    { value: 'preview', label: 'Preview', icon: <FileIcon className="w-3 h-3" /> },
+                    {
+                      value: 'code',
+                      label: 'Code',
+                      icon: <CodeIcon className='w-3 h-3' />,
+                    },
+                    {
+                      value: 'preview',
+                      label: 'Preview',
+                      icon: <FileIcon className='w-3 h-3' />,
+                    },
                   ]}
                   value={previewMode}
                   onChange={setPreviewMode}
                 />
               </div>
+            )}
+            {info?.editor === 'vscode' && (
+              <button
+                className='ml-3 shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-bg-tertiary text-xs text-text-secondary hover:bg-hover hover:text-text cursor-pointer transition-colors'
+                onClick={() => openInEditor(navPath)}
+              >
+                <PencilIcon className='w-3 h-3' />
+                Open in Editor
+              </button>
             )}
           </PathComments>
 
@@ -460,17 +565,14 @@ export function TreePage(props: TreePageProps) {
                 />
               )
             ) : fileFetching ? null : (
-              <div className="flex items-center justify-center h-32 text-xs text-text-muted">
+              <div className='flex items-center justify-center h-32 text-xs text-text-muted'>
                 File not found
               </div>
             )
           ) : entries.length > 0 ? (
-            <FolderViewer
-              entries={entries}
-              onNavigate={handleNavigate}
-            />
+            <FolderViewer entries={entries} onNavigate={handleNavigate} />
           ) : entriesFetching ? null : (
-            <div className="flex items-center justify-center h-32 text-xs text-text-muted">
+            <div className='flex items-center justify-center h-32 text-xs text-text-muted'>
               Empty directory
             </div>
           )}
@@ -487,7 +589,6 @@ export function TreePage(props: TreePageProps) {
             onScrollToHighlight={handleTourScrollToHighlight}
             onSubHighlight={handleTourSubHighlight}
             filePaths={paths}
-            editor={info?.editor}
           />
         )}
       </div>

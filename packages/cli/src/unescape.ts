@@ -10,5 +10,9 @@
  * This function reverses those escapes so the markdown renders correctly.
  */
 export function unescapeMarkdown(text: string): string {
-  return text.replace(/\\`/g, '`').replace(/\\"/g, '"');
+  return text
+    .replace(/\\n/g, '\n')
+    .replace(/\\t/g, '\t')
+    .replace(/\\`/g, '`')
+    .replace(/\\"/g, '"');
 }
