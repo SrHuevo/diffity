@@ -211,9 +211,11 @@ The rule: **if concept B can't be demonstrated without concept A, they belong in
 
 #### The loop
 
-**1. Spawn the build agent** (for code concepts) to create a small agent project with a Diffity tour. Pass `projectIdeas` from the lesson plan as `{{description}}` if available. Wait for it to return.
+**1. Ensure Diffity is running.** Before every build agent spawn, check `diffity list --json`. If no instance is running for the learning directory, restart it: `cd <learning-dir> && diffity tree --no-open` (background). Wait 2 seconds and verify. The process can die between steps — always check, never assume.
 
-**2. Open the tour and give a short, actionable message.** The build agent returns the tour ID. Open it:
+**2. Spawn the build agent** (for code concepts) to create a small agent project with a Diffity tour. Pass `projectIdeas` from the lesson plan as `{{description}}` if available. Wait for it to return.
+
+**3. Open the tour and give a short, actionable message.** The build agent returns the tour ID. Open it:
    ```
    open "http://localhost:<port>/tour/<tour-id>"
    ```
@@ -242,23 +244,23 @@ The rule: **if concept B can't be demonstrated without concept A, they belong in
    - Asked a question → answer it, then continue
    - Wants to skip → mark concept completed, move on
 
-**4. After 2-3 concepts, comprehension check.** Before giving a challenge, ask 1-2 quick questions:
+**5. After 2-3 concepts, comprehension check.** Before giving a challenge, ask 1-2 quick questions:
    - "Quick check — if I write `let x = 5;` then `x = 10;`, what does the compiler do?"
    - "What's the difference between `String` and `&str`?"
 
    If they get them wrong, teach more. Don't let them start a challenge they're not ready for.
 
-**5. Give a challenge.** Spawn the build agent in challenge mode to create a user project. Pass `projectIdeas.user` from the lesson plan as `{{description}}` if available. Tell the user what to do — be specific:
+**6. Give a challenge.** Spawn the build agent in challenge mode to create a user project. Pass `projectIdeas.user` from the lesson plan as `{{description}}` if available. Tell the user what to do — be specific:
 
    > Your turn. Open `lesson-01/user-1/README.md` for the requirements. Run `cargo test` to check your solution as you go. When you're done, say "done" and I'll review it.
 
-**6. When they say "done"**, spawn the verify agent. The verify agent reviews the code, leaves Diffity inline comments, and writes REVIEW.md. Then open the user's code in Diffity so they see the feedback in the browser:
+**7. When they say "done"**, spawn the verify agent. The verify agent reviews the code, leaves Diffity inline comments, and writes REVIEW.md. Then open the user's code in Diffity so they see the feedback in the browser:
    ```
    diffity open
    ```
    In chat, keep feedback short — the detailed feedback is in the Diffity comments. Just summarize: "Passed — nice work. Check the browser for inline feedback. One thing to look at: [teaching moment from verify summary]."
 
-**7. When a lesson is complete:**
+**8. When a lesson is complete:**
    - Spawn the readme agent (background) to write the lesson README
    - Update learn.json — mark lesson complete, append to sessionLog
    - If the plan is running low on lessons, spawn the plan agent (background) to plan more
