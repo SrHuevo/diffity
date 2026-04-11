@@ -40,6 +40,7 @@ export class ClaudeProcess extends EventEmitter {
       '-p', message,
       '--output-format', 'stream-json',
       '--verbose',
+      '--dangerously-skip-permissions',
     ];
 
     // Continue previous session if we have one
