@@ -48,7 +48,12 @@ export class ClaudeProcess extends EventEmitter {
       args.push('--resume', this.sessionId);
     }
 
-    this.activeProcess = spawn('claude', args, {
+    // Run as non-root user 'dev' if running as root (required for --dangerously-skip-permissions)
+    const isRoot = process.getuid?.() === 0;
+    const cmd = isRoot ? 'su' : 'claude';
+    const spawnArgs = isRoot ? ['dev', '-c', `claude ${args.join(' ')}`] : args;
+
+    this.activeProcess = spawn(cmd, spawnArgs, {
       cwd: this.cwd || process.cwd(),
       stdio: ['ignore', 'pipe', 'pipe'],
       env: { ...process.env, FORCE_COLOR: '0' },
